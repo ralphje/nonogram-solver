@@ -67,31 +67,46 @@ class SimpleSolver(Solver):
 
     @staticmethod
     def _permutations(line, specs):
-        """Yields all possible permutations of the given line given the specs"""
+        """Recursive method that yields all possible permutations of the given line given the specs"""
 
         # When there are no specs, everything in the line must be empty
         if not specs:
             yield [False] * len(line)
             return
-
+        
+        # Do you recognize the x, xs pattern from Haskell :-)?
         block, other_blocks = specs[0], specs[1:]
 
-        # Get all possible permutations of space before the first block
+        # Get all possible permutations of space before the first block:
+        # - We can get at most len(line) spaces
+        # - The amount of space needed by other blocks must be substracted
+        #   (i.e. the sum of all block lengths plus the accompanying spaces)
+        # - The block length must also be substracted
+        # - We add 1 as xrange yields [0..n-1] and we need [0..n] spaces
         space_needed_for_other_blocks = len(other_blocks) + sum(other_blocks)
-        for space in range(len(line) - space_needed_for_other_blocks - block + 1):
-            # Check if this amount of space is valid:
-            # - not any of the places before this block is currently set
-            # - none of the spaces covered by this block must be unset
-            # - the space after this block must not be set
-            # - there must not be any remaining set blocks if this is the last block
-            if any(line[0:space]) or \
-                    any((l is False for l in line[space:space + block])) or \
+        for space in xrange(len(line) - space_needed_for_other_blocks - block + 1):
+            # Check if this amount of space is valid.
+            # Break immediately if:
+            # - any of the fields in the space is currently True (amount of space only increases)
+            # Continue searching if:
+            # - any of the fields in the block is currently False
+            # - the field after the block is currently True (if the block does not touch border)
+            # - this is the last block and there is still a True field after the block
+            if any(line[:space]):
+                break
+            if any((l is False for l in line[space:space + block])) or \
                     (len(line) > (space + block) and line[space + block]) or \
                     not other_blocks and any(line[space + block:]):
                 continue
-
-            # Recurse by chopping off the block according to our new specs and attempt to do something
+            
+            # Now we recurse into this method, chopping off this space + block from the line and 
+            # continuing with the remaining blocks in the line.
             for permutation in SimpleSolver._permutations(line[space + block + 1:], other_blocks):
+                # We now use the result of our recursion and add this block to it:
+                # - All spaces are False
+                # - The block is True
+                # - The space after this block is False
+                # - The permutation is added after that
                 l2 = line.copy()
                 l2[:space] = [False] * space  # space of length space
                 l2[space:space + block] = [True] * block  # then true of length block
