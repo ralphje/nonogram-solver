@@ -53,17 +53,19 @@ class SimpleSolver(Solver):
         return did_anything
 
     @staticmethod
-    def _solve_line(current_line, specs):
+    def _solve_line(line, specs):
         """"Solves a single line (horizontal or vertical) according to the spec."""
 
-        permutations = SimpleSolver._permutations(current_line, specs)
+        permutations = SimpleSolver._permutations(line, specs)
+        # Set fields that agree in all permutations, i.e. if a field is True in all permutations
+        # it is set to True in the solved line, and vice versa
         columns = zip(*permutations)
         for i, states in enumerate(columns):
             if all(states):
-                current_line[i] = True
+                line[i] = True
             elif all((l is False for l in states)):
-                current_line[i] = False
-        return current_line
+                line[i] = False
+        return line
 
     @staticmethod
     def _permutations(line, specs):
